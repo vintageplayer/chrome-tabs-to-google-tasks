@@ -1,7 +1,7 @@
 {
   "name": "chrome-extension-typescript-starter",
   "version": "1.0.0",
-  "description": "chrome-extension-typescript-starter",
+  "description": "Plugin to serve as boilerplate for v3 chrome extensions using react, typescript, tailwind and webpack",
   "main": "index.js",
   "scripts": {
     "watch": "webpack --config webpack/webpack.dev.js --watch",
@@ -14,7 +14,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/chibat/chrome-extension-typescript-starter.git"
+    "url": "https://github.com/vintageplayer/chrome-extension-boilerplate.git"
   },
   "dependencies": {
     "react": "^18.2.0",
