@@ -4,6 +4,30 @@ import "../assets/tailwind.css";
 const Popup = () => {
   const [count, setCount] = useState(0);
   const [currentURL, setCurrentURL] = useState<string>();
+  const [tabs, setTabs] = useState<chrome.tabs.Tab[]>([]);
+
+  async function getAllTabs() {
+    const tabs = await chrome.tabs.query({});
+    setTabs(tabs);
+  }
+
+  function extractUrlFromSuspendedTab(url: string): string {
+    try {
+      if (url.startsWith('chrome-extension://') && url.includes('/park.html')) {
+        const urlParams = new URLSearchParams(url.split('?')[1]);
+        const originalUrl = urlParams.get('url');
+        return originalUrl ? decodeURIComponent(originalUrl) : url;
+      }
+      return url;
+    } catch (error) {
+      console.error('Error extracting URL:', error);
+      return url;
+    }
+  }
+
+  useEffect(() => {
+    getAllTabs();
+  }, []);
 
   useEffect(() => {
     chrome.action.setBadgeText({ text: count.toString() });
@@ -48,6 +72,18 @@ const Popup = () => {
       <button 
          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded"
         onClick={changeBackground}>change background</button>
+        <ul>
+          {tabs
+            .filter(tab => {
+              const extractedUrl = extractUrlFromSuspendedTab(tab.url ?? '');
+              return !extractedUrl.startsWith('http://') && !extractedUrl.startsWith('https://');
+            })
+            .map((tab) => (
+              <li key={tab.id}>
+                {tab.title}, {extractUrlFromSuspendedTab(tab.url ?? '')}, {tab.lastAccessed}
+              </li>
+            ))}
+        </ul>
     </>
   );
 };

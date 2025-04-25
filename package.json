@@ -1,7 +1,7 @@
 {
-  "name": "chrome-extension-typescript-starter",
+  "name": "chrome-tabs-to-google-tasks",
   "version": "1.0.0",
-  "description": "Plugin to serve as boilerplate for v3 chrome extensions using react, typescript, tailwind and webpack",
+  "description": "Helps declutter your Chrome browser by adding tabs to Google Tasks and closing them",
   "main": "index.js",
   "scripts": {
     "watch": "webpack --config webpack/webpack.dev.js --watch",
@@ -14,14 +14,14 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vintageplayer/chrome-extension-boilerplate.git"
+    "url": "https://github.com/vintageplayer/chrome-tabs-to-google-tasks.git"
   },
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@types/chrome": "0.0.158",
+    "@types/chrome": "0.0.316",
     "@types/jest": "^29.5.0",
     "@types/react": "^18.0.29",
     "@types/react-dom": "^18.0.11",
