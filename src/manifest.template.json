@@ -9,6 +9,13 @@
     "page": "options.html"
   },
 
+  "oauth2": {
+    "client_id": "__GOOGLE_CLIENT_ID__",
+    "scopes": [
+      "https://www.googleapis.com/auth/tasks.readonly"
+    ]
+  },
+
   "action": {
     "default_icon": "icon.png",
     "default_popup": "popup.html",
@@ -27,7 +34,8 @@
   },
 
   "permissions": [
-    "tabs"
+    "tabs",
+    "identity"
   ],
 
   "host_permissions": [
