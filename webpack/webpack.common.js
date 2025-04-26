@@ -78,7 +78,7 @@ module.exports = {
                 
                 compiler.hooks.beforeRun.tap("InjectManifestPlugin", injectManifest);
                 compiler.hooks.beforeCompile.tap("InjectManifestPlugin", injectManifest);
-                compiler.hooks.watchRun.tapAsync("InjectManifestPlugin", injectManifest);
+                compiler.hooks.watchRun.tap("InjectManifestPlugin", injectManifest);
             }
         }
     ],
