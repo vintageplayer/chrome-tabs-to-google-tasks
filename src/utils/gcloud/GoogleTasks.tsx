@@ -1,15 +1,32 @@
 import { getAuthToken, removeAuthToken } from "./auth";
 
-export async function getTasks() {
+const taskListId = "WlZ2cWU3Rl9hblBGZlpXUQ";
+
+interface Task {
+    id: string | null;
+    title: string;
+    notes: string | null;
+    due: string | null;
+}
+
+export async function runRequestWithRetry(url: string, method: string = "GET", body: any = null, retriesLeft: number = 1) {
     let token = await getAuthToken(true);
-    let retriesLeft = 1; // You allow 1 retry
-  
+    const headers: Record<string, string> = {
+        Authorization: "Bearer " + token,
+    };
+    if (body) {
+        headers["Content-Type"] = "application/json";
+    }
+    if (retriesLeft === undefined || retriesLeft === null || retriesLeft < 0) {
+        retriesLeft = 1;
+    }
+
     try {
       while (retriesLeft >= 0) {
-        const res = await fetch("https://tasks.googleapis.com/tasks/v1/lists/@default/tasks", {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
+        const res = await fetch(url, {
+          method: method,
+          headers: headers,
+          body: body,
         });
   
         if (res.status === 401) {
@@ -48,4 +65,16 @@ export async function getTasks() {
       console.error("Unexpected error fetching tasks:", error);
     }
   }
+  
+
+export async function insertNewTask(task: Task) {
+    const url = `https://tasks.googleapis.com/tasks/v1/lists/${taskListId}/tasks`;
+    return await runRequestWithRetry(url, "POST", JSON.stringify(task), 1);
+}
+
+export async function getTasks() {
+    const url = `https://tasks.googleapis.com/tasks/v1/lists/${taskListId}/tasks`;
+    return await runRequestWithRetry(url);
+  }
+  
   

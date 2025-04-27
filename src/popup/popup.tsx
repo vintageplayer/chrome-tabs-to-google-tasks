@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "../assets/tailwind.css";
-import { getTasks } from "../utils/gcloud/GoogleTasks";
+import { getTasks, insertNewTask } from "../utils/gcloud/GoogleTasks";
 
 const Popup = () => {
   const [count, setCount] = useState(0);
@@ -64,6 +64,19 @@ const Popup = () => {
     });
   };
 
+  const createTask = () => {
+    insertNewTask({
+      title: "TestFromExtension",
+      notes: "TestNotes FromExtension",
+      id: null,
+      due: null
+    }).then((task) => { 
+      getTasks().then((tasks) => {
+        setTasks(tasks);
+      });
+    });
+  };
+
   return (
     <>
       <ul style={{ minWidth: "700px" }}>
@@ -80,6 +93,9 @@ const Popup = () => {
       <button 
          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded"
         onClick={changeBackground}>change background</button>
+        <button 
+         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded"
+        onClick={createTask}>create task</button>
         <ul>
           {tabs
             .filter(tab => {
