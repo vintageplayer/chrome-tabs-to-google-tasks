@@ -124,25 +124,62 @@ const Popup = () => {
         <button 
          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded"
         onClick={createTask}>create task</button>
-        <ul>
-          {tabs
-            .filter(tab => {
-              const extractedUrl = extractUrlFromSuspendedTab(tab.url ?? '');
-              return extractedUrl.startsWith('http://') || extractedUrl.startsWith('https://');
-            })
-            .map((tab) => (
-              <li key={tab.id} className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={tab.id ? selectedTabsInfo.some(t => t.id === tab.id) : false}
-                  onChange={() => tab.id && handleTabSelection(tab)}
-                />
-                <span className={tab.id && selectedTabsInfo.some(t => t.id === tab.id) ? "font-bold" : ""}>
-                  {tab.title}, {extractUrlFromSuspendedTab(tab.url ?? '')}, {new Date(tab.lastAccessed ?? 0).toLocaleString()}
-                </span>
-              </li>
-            ))}
-        </ul>
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="text-left border-b">
+              <th className="p-2 w-10"></th>
+              <th className="p-2 w-12">Window</th>
+              <th className="p-2 w-12">Pos#</th>
+              <th className="p-2 w-84">Title</th>
+              <th className="p-2 w-24">URL</th>
+              <th className="p-2">Last Accessed</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tabs
+              .filter(tab => {
+                const extractedUrl = extractUrlFromSuspendedTab(tab.url ?? '');
+                return extractedUrl.startsWith('http://') || extractedUrl.startsWith('https://');
+              })
+              .map((tab) => (
+                <tr key={tab.id} className="border-b hover:bg-gray-50">
+                  <td className="p-2">
+                    <input
+                      type="checkbox"
+                      checked={tab.id ? selectedTabsInfo.some(t => t.id === tab.id) : false}
+                      onChange={() => tab.id && handleTabSelection(tab)}
+                    />
+                  </td>
+                  <td className="p-2">
+                    {tab.windowId}
+                  </td>
+                  <td className="p-2">
+                    {tab.index + 1}
+                  </td>
+                  <td className={`p-2 max-w-96 ${tab.id && selectedTabsInfo.some(t => t.id === tab.id) ? "font-bold" : ""}`}>
+                    <div className="truncate" title={tab.title}>
+                      {tab.title}
+                    </div>
+                  </td>
+                  <td className="p-2">
+                    <a 
+                      href="#" 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (tab.id) chrome.tabs.update(tab.id, { active: true });
+                      }}
+                      className="text-blue-600 hover:underline"
+                    >
+                      To Tab
+                    </a>
+                  </td>
+                  <td className="p-2">
+                    {new Date(tab.lastAccessed ?? 0).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
         <ul>
           {tasks && tasks.map((task) => (
             <li key={task.id}>{task.title}</li>
