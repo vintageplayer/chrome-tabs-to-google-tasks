@@ -12,7 +12,7 @@
   "oauth2": {
     "client_id": "__GOOGLE_CLIENT_ID__",
     "scopes": [
-      "https://www.googleapis.com/auth/tasks.readonly"
+      "https://www.googleapis.com/auth/tasks"
     ]
   },
 
