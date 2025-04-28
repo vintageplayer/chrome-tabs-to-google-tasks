@@ -1,52 +1,42 @@
-# Chrome Extension TypeScript Starter
+# Chrome Tabs to Google Tasks Extension
 
-Chrome Extension, React, TypeScript 
+Declutter your Chrome browser by adding tabs to Google Tasks and closing them.
 
-## Prerequisites
+## Locally Setup
 
-* [node + npm](https://nodejs.org/) (Current Version)
-
-
-## Includes the following
-
-* TypeScript
-* Webpack
-* React
-* Tailwind
-* Example Code
-    * Chrome Storage
-    * Options Version 2
-    * content script
-    * count up badge number
-    * background
-
-## Setup
+### Setup
 
 ```
-npm install
+yarn install
 ```
 
-## Import as Visual Studio Code project
-
-...
-
-## Build
+### Build
 
 ```
-npm run build
+yarn run build
 ```
 
-## Build in watch mode
+### Build in watch mode
 
 ### terminal
 
 ```
-npm run watch
+yarn run watch
 ```
 
-## Load extension to chrome
+### Load extension to chrome
 
 Load `dist` directory
 
-## Test
-`npx jest` or `npm run test`
+## To Do
+
+- [ ] Add a notification to show the task that is created
+- [ ] Store users task lists in chrome storage
+- [ ] Let user select the task list to add the tasks to
+- [ ] Allow users to select the date for the task
+- [ ] Create filters for the tabs
+    - [ ] New Tabs
+    - [ ] non http/https tabs
+    - [ ] Based on their open to visit time
+- [ ] Select tabs as always open that can be filtered out from the list of tabs
+
