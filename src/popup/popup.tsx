@@ -6,6 +6,8 @@ interface SelectedTabInfo {
   id: number;
   url: string;
   title: string;
+  windowId: number;
+  position: number;
 }
 
 const Popup = () => {
@@ -14,6 +16,7 @@ const Popup = () => {
   const [tabs, setTabs] = useState<chrome.tabs.Tab[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
   const [selectedTabsInfo, setSelectedTabsInfo] = useState<SelectedTabInfo[]>([]);
+  const [newTaskTitle, setNewTaskTitle] = useState<string>('');
 
   async function getAllTabs() {
     const tabs = await chrome.tabs.query({});
@@ -72,13 +75,14 @@ const Popup = () => {
   };
 
   const createTask = () => {
-    const taskNotes = selectedTabsInfo.map(t => t.url).join(', ');
+    const taskNotes = selectedTabsInfo.map(t => t.url).join('\n\n');
     insertNewTask({
-      title: "TestMultipleTabs",
+      title: newTaskTitle,
       notes: taskNotes,
       id: null,
       due: null
-    }).then((task) => { 
+    }).then((task) => {
+      setNewTaskTitle('');
       getTasks().then((tasks) => {
         setTasks(tasks);
       });
@@ -92,11 +96,20 @@ const Popup = () => {
     if (isSelected) {
       setSelectedTabsInfo(selectedTabsInfo.filter(t => t.id !== tab.id));
     } else {
-      setSelectedTabsInfo([...selectedTabsInfo, {
+      const newTabInfo = {
         id: tab.id,
         url: extractUrlFromSuspendedTab(tab.url ?? ''),
-        title: tab.title || 'ChromeTab'
-      }]);
+        title: tab.title || 'ChromeTab',
+        windowId: tab.windowId,
+        position: tab.index
+      };
+      const sortedSelectedTabsInfo = [...selectedTabsInfo, newTabInfo].sort((a, b) => {
+        if (a.windowId !== b.windowId) {
+          return a.windowId - b.windowId;
+        }
+        return a.position - b.position;
+      });
+      setSelectedTabsInfo(sortedSelectedTabsInfo);
     }
   };
 
@@ -105,12 +118,18 @@ const Popup = () => {
       <ul style={{ minWidth: "700px" }}>
         <li>Current URL: {currentURL}</li>
         <li>Current Time: {new Date().toLocaleTimeString()}</li>
+        <li>Total Tabs: {tabs.length}</li>
+        <li>Selected Tabs: {selectedTabsInfo.length}</li>
       </ul>
-      <ul>
-        {selectedTabsInfo.length > 0 && (
-          <li>Selected Tabs: {selectedTabsInfo.map(tab => tab.title).join(', ')}</li>
-        )}
-      </ul>
+      <div className="mt-4 p-2">
+          <input
+            type="text"
+            value={newTaskTitle}
+            onChange={(e) => setNewTaskTitle(e.target.value)}
+            placeholder="Enter task title"
+            className="w-1/2 p-2 border rounded mb-2"
+          />
+        </div>
       <button
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded"
         onClick={() => setCount(count + 1)}
@@ -157,8 +176,20 @@ const Popup = () => {
                     {tab.index + 1}
                   </td>
                   <td className={`p-2 max-w-96 ${tab.id && selectedTabsInfo.some(t => t.id === tab.id) ? "font-bold" : ""}`}>
-                    <div className="truncate" title={tab.title}>
-                      {tab.title}
+                    <div className="flex flex-col">
+                      <div className="truncate" title={tab.title}>
+                        {tab.title}
+                      </div>
+                      <div className="text-sm text-gray-500 truncate">
+                        {(() => {
+                          try {
+                            const url = new URL(extractUrlFromSuspendedTab(tab.url ?? ''));
+                            return url.hostname;
+                          } catch {
+                            return '';
+                          }
+                        })()}
+                      </div>
                     </div>
                   </td>
                   <td className="p-2">
@@ -169,6 +200,7 @@ const Popup = () => {
                         if (tab.id) chrome.tabs.update(tab.id, { active: true });
                       }}
                       className="text-blue-600 hover:underline"
+                      title={extractUrlFromSuspendedTab(tab.url ?? '')}
                     >
                       To Tab
                     </a>
