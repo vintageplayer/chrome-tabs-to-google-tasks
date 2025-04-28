@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "../assets/tailwind.css";
-import { getTasks, insertNewTask } from "../utils/gcloud/GoogleTasks";
+import { insertNewTask } from "../utils/gcloud/GoogleTasks";
 import { getNextDayAtMidnight } from "../utils/date";
 
 interface SelectedTabInfo {
@@ -54,7 +54,9 @@ const Popup = () => {
       setNewTaskTitle('');
       // Close all selected tabs
       selectedTabsInfo.map(tab => 
-        chrome.tabs.remove(tab.id)
+        chrome.tabs.remove(tab.id).then(() => {
+          getAllTabs();
+        })
       );
       setSelectedTabsInfo([]); // Clear selected tabs state      
     });
