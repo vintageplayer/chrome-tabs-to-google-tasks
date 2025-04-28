@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import "../assets/tailwind.css";
 import { getTasks, insertNewTask } from "../utils/gcloud/GoogleTasks";
 import { getNextDayAtMidnight } from "../utils/date";
-import { getAuthToken } from "../utils/gcloud/RequestHelpers";
 
 interface SelectedTabInfo {
   id: number;
@@ -13,13 +12,9 @@ interface SelectedTabInfo {
 }
 
 const Popup = () => {
-  const [count, setCount] = useState(0);
-  const [currentURL, setCurrentURL] = useState<string>();
   const [tabs, setTabs] = useState<chrome.tabs.Tab[]>([]);
-  const [tasks, setTasks] = useState<any[]>([]);
   const [selectedTabsInfo, setSelectedTabsInfo] = useState<SelectedTabInfo[]>([]);
   const [newTaskTitle, setNewTaskTitle] = useState<string>('');
-  const [token, setToken] = useState<string | null>(null);
   async function getAllTabs() {
     const tabs = await chrome.tabs.query({});
     setTabs(tabs);
@@ -41,43 +36,7 @@ const Popup = () => {
 
   useEffect(() => {
     getAllTabs();
-    getAuthToken().then((token) => {
-      setToken(token);
-    });
   }, []);
-
-  useEffect(() => {
-    getTasks().then((tasks) => {
-      setTasks(tasks);
-    });
-  }, []);
-
-  useEffect(() => {
-    chrome.action.setBadgeText({ text: count.toString() });
-  }, [count]);
-
-  useEffect(() => {
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-      setCurrentURL(tabs[0].url);
-    });
-  }, []);
-
-  const changeBackground = () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-      const tab = tabs[0];
-      if (tab.id) {
-        chrome.tabs.sendMessage(
-          tab.id,
-          {
-            color: "#555555",
-          },
-          (msg) => {
-            console.log("result message:", msg);
-          }
-        );
-      }
-    });
-  };
 
   /*
     Setting the due date to the next day at midnight. This is because Google Tasks API doesn't support setting time currently that's visible in the UI.
@@ -93,9 +52,6 @@ const Popup = () => {
       due: getNextDayAtMidnight().toISOString()
     }).then((task) => {
       setNewTaskTitle('');
-      getTasks().then((tasks) => {
-        setTasks(tasks);
-      });
       // Close all selected tabs
       selectedTabsInfo.map(tab => 
         chrome.tabs.remove(tab.id)
@@ -131,11 +87,8 @@ const Popup = () => {
   return (
     <>
       <ul style={{ minWidth: "700px" }}>
-        <li>Current URL: {currentURL}</li>
-        <li>Current Time: {new Date().toLocaleTimeString()}</li>
         <li>Total Tabs: {tabs.length}</li>
         <li>Selected Tabs: {selectedTabsInfo.length}</li>
-        <li>Token: {token}</li>
       </ul>
       <div className="mt-4 p-2">
           <input
@@ -146,16 +99,6 @@ const Popup = () => {
             className="w-1/2 p-2 border rounded mb-2"
           />
         </div>
-      <button
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded"
-        onClick={() => setCount(count + 1)}
-        style={{ marginRight: "5px" }}
-      >
-        count up
-      </button>
-      <button 
-         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded"
-        onClick={changeBackground}>change background</button>
         <button 
          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded"
         onClick={createTask}>create task</button>
@@ -228,11 +171,6 @@ const Popup = () => {
               ))}
           </tbody>
         </table>
-        <ul>
-          {tasks && tasks.map((task) => (
-            <li key={task.id}>{task.title}</li>
-          ))}
-        </ul>
     </>
   );
 };
