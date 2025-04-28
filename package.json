@@ -17,6 +17,7 @@
     "url": "https://github.com/vintageplayer/chrome-tabs-to-google-tasks.git"
   },
   "dependencies": {
+    "date-fns": "^4.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

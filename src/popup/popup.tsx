@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import "../assets/tailwind.css";
 import { getTasks, insertNewTask } from "../utils/gcloud/GoogleTasks";
+import { getNextDayAtMidnight } from "../utils/date";
+import { getAuthToken } from "../utils/gcloud/RequestHelpers";
 
 interface SelectedTabInfo {
   id: number;
@@ -17,7 +19,7 @@ const Popup = () => {
   const [tasks, setTasks] = useState<any[]>([]);
   const [selectedTabsInfo, setSelectedTabsInfo] = useState<SelectedTabInfo[]>([]);
   const [newTaskTitle, setNewTaskTitle] = useState<string>('');
-
+  const [token, setToken] = useState<string | null>(null);
   async function getAllTabs() {
     const tabs = await chrome.tabs.query({});
     setTabs(tabs);
@@ -39,6 +41,9 @@ const Popup = () => {
 
   useEffect(() => {
     getAllTabs();
+    getAuthToken().then((token) => {
+      setToken(token);
+    });
   }, []);
 
   useEffect(() => {
@@ -74,18 +79,28 @@ const Popup = () => {
     });
   };
 
+  /*
+    Setting the due date to the next day at midnight. This is because Google Tasks API doesn't support setting time currently that's visible in the UI.
+    Will have to either create a new event going forward to have a separate calendar UI. Setting the time field in due does get stored internally for future API queries.
+    Only the UI doesn't reflect the time.
+  */
   const createTask = () => {
     const taskNotes = selectedTabsInfo.map(t => t.url).join('\n\n');
     insertNewTask({
       title: newTaskTitle,
       notes: taskNotes,
       id: null,
-      due: null
+      due: getNextDayAtMidnight().toISOString()
     }).then((task) => {
       setNewTaskTitle('');
       getTasks().then((tasks) => {
         setTasks(tasks);
       });
+      // Close all selected tabs
+      selectedTabsInfo.map(tab => 
+        chrome.tabs.remove(tab.id)
+      );
+      setSelectedTabsInfo([]); // Clear selected tabs state      
     });
   };
 
@@ -120,6 +135,7 @@ const Popup = () => {
         <li>Current Time: {new Date().toLocaleTimeString()}</li>
         <li>Total Tabs: {tabs.length}</li>
         <li>Selected Tabs: {selectedTabsInfo.length}</li>
+        <li>Token: {token}</li>
       </ul>
       <div className="mt-4 p-2">
           <input
