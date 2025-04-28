@@ -21,13 +21,19 @@ const replacePlaceholdersInManifest = () => {
     fs.writeFileSync(outputPath, manifestContent);
 };
 
+const allEntries = {
+    popup: path.join(srcDir, 'popup/index.tsx'),
+    options: path.join(srcDir, 'options/index.tsx'),
+    background: path.join(srcDir, 'background/background.ts'),
+    content_script: path.join(srcDir, 'content/content_script.tsx'),
+}
+
+const existingEntries = Object.fromEntries(
+    Object.entries(allEntries).filter(([_, path]) => fs.existsSync(path))
+);
+
 module.exports = {
-    entry: {
-      popup: path.join(srcDir, 'popup/index.tsx'),
-      options: path.join(srcDir, 'options/index.tsx'),
-      background: path.join(srcDir, 'background/background.ts'),
-      content_script: path.join(srcDir, 'content/content_script.tsx'),
-    },
+    entry: existingEntries,
     output: {
         path: path.join(__dirname, "../dist/js"),
         filename: "[name].js",
