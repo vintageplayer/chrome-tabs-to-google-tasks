@@ -2,6 +2,24 @@ const webpack = require("webpack");
 const path = require("path");
 const CopyPlugin = require("copy-webpack-plugin");
 const srcDir = path.join(__dirname, "..", "src");
+const fs = require("fs");
+
+// Uncomment this if using dotenv to load environment variables
+// const dotenv = require("dotenv");
+// dotenv.config();
+
+const replacePlaceholdersInManifest = () => {
+    const templatePath = path.resolve(srcDir, "manifest.template.json");
+    const outputPath = path.resolve(__dirname, "../dist/manifest.json");
+  
+    let manifestContent = fs.readFileSync(templatePath, "utf8");
+  
+    // Replace all placeholders
+    // manifestContent = manifestContent.replace(/__A_PLACEHOLDER__/g, process.env.VALUE_FOR_PLACEHOLDER);
+
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+    fs.writeFileSync(outputPath, manifestContent);
+};
 
 module.exports = {
     entry: {
@@ -55,5 +73,14 @@ module.exports = {
             patterns: [{ from: ".", to: "../", context: "public" }],
             options: {},
         }),
+        {
+            apply: (compiler) => {
+                const injectManifest = () => replacePlaceholdersInManifest();
+                
+                compiler.hooks.beforeRun.tap("InjectManifestPlugin", injectManifest);
+                compiler.hooks.beforeCompile.tap("InjectManifestPlugin", injectManifest);
+                compiler.hooks.watchRun.tap("InjectManifestPlugin", injectManifest);
+            }
+        }
     ],
 };

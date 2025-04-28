@@ -17,11 +17,13 @@
     "url": "https://github.com/vintageplayer/chrome-extension-boilerplate.git"
   },
   "dependencies": {
+    "dotenv": "^16.5.0",
+    "fs": "^0.0.1-security",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@types/chrome": "0.0.158",
+    "@types/chrome": "0.0.316",
     "@types/jest": "^29.5.0",
     "@types/react": "^18.0.29",
     "@types/react-dom": "^18.0.11",
