@@ -15,6 +15,8 @@ const Popup = () => {
   const [tabs, setTabs] = useState<chrome.tabs.Tab[]>([]);
   const [selectedTabsInfo, setSelectedTabsInfo] = useState<SelectedTabInfo[]>([]);
   const [newTaskTitle, setNewTaskTitle] = useState<string>('');
+  const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+
   async function getAllTabs() {
     const tabs = await chrome.tabs.query({});
     setTabs(tabs);
@@ -50,15 +52,25 @@ const Popup = () => {
       notes: taskNotes,
       id: null,
       due: getNextDayAtMidnight().toISOString()
-    }).then((task) => {
-      setNewTaskTitle('');
-      // Close all selected tabs
-      selectedTabsInfo.map(tab => 
-        chrome.tabs.remove(tab.id).then(() => {
-          getAllTabs();
-        })
-      );
-      setSelectedTabsInfo([]); // Clear selected tabs state      
+    }).then((response) => {
+      if (response) {
+        setNotification({ message: 'Task created successfully!', type: 'success' });
+        setNewTaskTitle('');
+        // Close all selected tabs
+        selectedTabsInfo.map(tab => 
+          chrome.tabs.remove(tab.id).then(() => {
+            getAllTabs();
+          })
+        );
+        setSelectedTabsInfo([]); // Clear selected tabs state
+        
+        // Clear success notification after 3 seconds
+        setTimeout(() => setNotification(null), 3000);
+      } else {
+        setNotification({ message: 'Failed to create task. Please contact the developer.', type: 'error' });
+        // Clear error notification after 5 seconds
+        setTimeout(() => setNotification(null), 5000);
+      }
     });
   };
 
@@ -88,6 +100,13 @@ const Popup = () => {
 
   return (
     <>
+      {notification && (
+        <div className={`fixed top-0 left-0 right-0 p-4 text-white text-center ${
+          notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        }`}>
+          {notification.message}
+        </div>
+      )}
       <ul style={{ minWidth: "700px" }}>
         <li>Total Tabs: {tabs.length}</li>
         <li>Selected Tabs: {selectedTabsInfo.length}</li>

@@ -3,6 +3,7 @@ export async function getAuthToken(interactive: boolean = false): Promise<string
     const tokenResult = await chrome.identity.getAuthToken({ interactive });
     return tokenResult.token || null;
   } catch (error) {
+    console.error("Error getting auth token:", error);
     console.error(error);
     return null;
   }
@@ -41,7 +42,7 @@ export async function runRequestWithRetry(url: string, method: string = "GET", b
 
         if (retriesLeft === 0) {
           console.error("Retry exhausted. User must reauthenticate.");
-          return;
+          return null;
         }
 
         // Refresh the token and retry once
@@ -49,7 +50,7 @@ export async function runRequestWithRetry(url: string, method: string = "GET", b
         const newToken = await getAuthToken(true);
         if (!newToken) {
           console.error("Could not refresh token.");
-          return;
+          return null;
         }
         token = newToken;
 
@@ -58,13 +59,14 @@ export async function runRequestWithRetry(url: string, method: string = "GET", b
       }
 
       if (!res.ok) {
-        console.error(`Error fetching tasks: ${res.status} ${res.statusText}`);
-        return;
+        console.error(`Error Running Request: ${res.status} ${res.statusText}`);
+        return null;
       }
 
       return res;
     }
   } catch (error) {
     console.error("Unexpected error fetching tasks:", error);
+    return null;
   }
 }
