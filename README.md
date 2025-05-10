@@ -36,7 +36,8 @@ Load `dist` directory
 - [ ] Allow users to select the date for the task
 - [ ] Create filters for the tabs
     - [ ] New Tabs
-    - [ ] non http/https tabs
+    - [X] non http/https tabs
     - [ ] Based on their open to visit time
 - [ ] Select tabs as always open that can be filtered out from the list of tabs
+- [ ] Higlighting duplicate tabs
 
