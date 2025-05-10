@@ -16,6 +16,7 @@ const Popup = () => {
   const [selectedTabsInfo, setSelectedTabsInfo] = useState<SelectedTabInfo[]>([]);
   const [newTaskTitle, setNewTaskTitle] = useState<string>('');
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+  const [filterLocalUrls, setFilterLocalUrls] = useState<boolean>(true);
 
   async function getAllTabs() {
     const tabs = await chrome.tabs.query({});
@@ -123,6 +124,15 @@ const Popup = () => {
         <button 
          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded"
         onClick={createTask}>create task</button>
+        <label className="ml-4 inline-flex items-center">
+          <input
+            type="checkbox"
+            checked={filterLocalUrls}
+            onChange={(e) => setFilterLocalUrls(e.target.checked)}
+            className="form-checkbox h-4 w-4"
+          />
+          <span className="ml-2">Hide local URLs</span>
+        </label>
         <table className="w-full border-collapse">
           <thead>
             <tr className="text-left border-b">
@@ -137,6 +147,7 @@ const Popup = () => {
           <tbody>
             {tabs
               .filter(tab => {
+                if (!filterLocalUrls) return true;
                 const extractedUrl = extractUrlFromSuspendedTab(tab.url ?? '');
                 return extractedUrl.startsWith('http://') || extractedUrl.startsWith('https://');
               })
