@@ -17,6 +17,13 @@ const Popup = () => {
   const [newTaskTitle, setNewTaskTitle] = useState<string>('');
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   const [filterLocalUrls, setFilterLocalUrls] = useState<boolean>(true);
+  const [collapsedWindows, setCollapsedWindows] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    chrome.windows.getAll().then(windows => {
+      setCollapsedWindows(new Set(windows.map(w => w.id!)));
+    });
+  }, []);
 
   async function getAllTabs() {
     const tabs = await chrome.tabs.query({});
@@ -99,6 +106,26 @@ const Popup = () => {
     }
   };
 
+  const toggleWindowCollapse = (windowId: number) => {
+    setCollapsedWindows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(windowId)) {
+        newSet.delete(windowId);
+      } else {
+        newSet.add(windowId);
+      }
+      return newSet;
+    });
+  };
+
+  const groupedTabs = tabs.reduce((acc, tab) => {
+    if (!acc[tab.windowId]) {
+      acc[tab.windowId] = [];
+    }
+    acc[tab.windowId].push(tab);
+    return acc;
+  }, {} as Record<number, chrome.tabs.Tab[]>);
+
   return (
     <>
       {notification && (
@@ -109,7 +136,11 @@ const Popup = () => {
         </div>
       )}
       <ul style={{ minWidth: "700px" }}>
-        <li>Total Tabs: {tabs.length}</li>
+        <li>Total Tabs: {tabs.filter(tab => {
+          if (!filterLocalUrls) return true;
+          const extractedUrl = extractUrlFromSuspendedTab(tab.url ?? '');
+          return extractedUrl.startsWith('http://') || extractedUrl.startsWith('https://');
+        }).length}</li>
         <li>Selected Tabs: {selectedTabsInfo.length}</li>
       </ul>
       <div className="mt-4 p-2">
@@ -120,89 +151,108 @@ const Popup = () => {
             placeholder="Enter task title"
             className="w-1/2 p-2 border rounded mb-2"
           />
-        </div>
-        <button 
-         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded"
+      </div>
+      <button 
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded"
         onClick={createTask}>create task</button>
-        <label className="ml-4 inline-flex items-center">
-          <input
-            type="checkbox"
-            checked={filterLocalUrls}
-            onChange={(e) => setFilterLocalUrls(e.target.checked)}
-            className="form-checkbox h-4 w-4"
-          />
-          <span className="ml-2">Hide local URLs</span>
-        </label>
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="text-left border-b">
-              <th className="p-2 w-10"></th>
-              <th className="p-2 w-12">Window</th>
-              <th className="p-2 w-12">Pos#</th>
-              <th className="p-2 w-84">Title</th>
-              <th className="p-2 w-24">URL</th>
-              <th className="p-2">Last Accessed</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tabs
-              .filter(tab => {
-                if (!filterLocalUrls) return true;
-                const extractedUrl = extractUrlFromSuspendedTab(tab.url ?? '');
-                return extractedUrl.startsWith('http://') || extractedUrl.startsWith('https://');
-              })
-              .map((tab) => (
-                <tr key={tab.id} className="border-b hover:bg-gray-50">
-                  <td className="p-2">
-                    <input
-                      type="checkbox"
-                      checked={tab.id ? selectedTabsInfo.some(t => t.id === tab.id) : false}
-                      onChange={() => tab.id && handleTabSelection(tab)}
-                    />
-                  </td>
-                  <td className="p-2">
-                    {tab.windowId}
-                  </td>
-                  <td className="p-2">
-                    {tab.index + 1}
-                  </td>
-                  <td className={`p-2 max-w-96 ${tab.id && selectedTabsInfo.some(t => t.id === tab.id) ? "font-bold" : ""}`}>
-                    <div className="flex flex-col">
-                      <div className="truncate" title={tab.title}>
-                        {tab.title}
-                      </div>
-                      <div className="text-sm text-gray-500 truncate">
-                        {(() => {
-                          try {
-                            const url = new URL(extractUrlFromSuspendedTab(tab.url ?? ''));
-                            return url.hostname;
-                          } catch {
-                            return '';
-                          }
-                        })()}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-2">
-                    <a 
-                      href="#" 
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (tab.id) chrome.tabs.update(tab.id, { active: true });
-                      }}
-                      className="text-blue-600 hover:underline"
-                      title={extractUrlFromSuspendedTab(tab.url ?? '')}
+      <label className="ml-4 inline-flex items-center">
+        <input
+          type="checkbox"
+          checked={filterLocalUrls}
+          onChange={(e) => setFilterLocalUrls(e.target.checked)}
+          className="form-checkbox h-4 w-4"
+        />
+        <span className="ml-2">Hide local URLs</span>
+      </label>
+      <table className="w-full border-collapse">
+        <thead>
+          <tr className="text-left border-b">
+            <th className="p-2 w-10"></th>
+            <th className="p-2 w-12">Window</th>
+            <th className="p-2 w-12">Pos#</th>
+            <th className="p-2 w-84">Title</th>
+            <th className="p-2 w-24">URL</th>
+            <th className="p-2">Last Accessed</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.entries(groupedTabs).map(([windowId, windowTabs]) => {
+            const filteredTabs = windowTabs.filter(tab => {
+              if (!filterLocalUrls) return true;
+              const extractedUrl = extractUrlFromSuspendedTab(tab.url ?? '');
+              return extractedUrl.startsWith('http://') || extractedUrl.startsWith('https://');
+            });
+
+            if (filteredTabs.length === 0) return null;
+
+            return (
+              <React.Fragment key={windowId}>
+                <tr className="bg-gray-100">
+                  <td colSpan={6} className="p-2">
+                    <button 
+                      onClick={() => toggleWindowCollapse(Number(windowId))}
+                      className="flex items-center space-x-2"
                     >
-                      To Tab
-                    </a>
-                  </td>
-                  <td className="p-2">
-                    {new Date(tab.lastAccessed ?? 0).toLocaleString()}
+                      <span>{collapsedWindows.has(Number(windowId)) ? '▶' : '▼'}</span>
+                      <span>Window {windowId} ({filteredTabs.length} tabs)</span>
+                    </button>
                   </td>
                 </tr>
-              ))}
-          </tbody>
-        </table>
+                {!collapsedWindows.has(Number(windowId)) && filteredTabs.map((tab) => (
+                  <tr key={tab.id} className="border-b hover:bg-gray-50">
+                    <td className="p-2">
+                      <input
+                        type="checkbox"
+                        checked={tab.id ? selectedTabsInfo.some(t => t.id === tab.id) : false}
+                        onChange={() => tab.id && handleTabSelection(tab)}
+                      />
+                    </td>
+                    <td className="p-2">
+                      {tab.windowId}
+                    </td>
+                    <td className="p-2">
+                      {tab.index + 1}
+                    </td>
+                    <td className={`p-2 max-w-96 ${tab.id && selectedTabsInfo.some(t => t.id === tab.id) ? "font-bold" : ""}`}>
+                      <div className="flex flex-col">
+                        <div className="truncate" title={tab.title}>
+                          {tab.title}
+                        </div>
+                        <div className="text-sm text-gray-500 truncate">
+                          {(() => {
+                            try {
+                              const url = new URL(extractUrlFromSuspendedTab(tab.url ?? ''));
+                              return url.hostname;
+                            } catch {
+                              return '';
+                            }
+                          })()}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-2">
+                      <a 
+                        href="#" 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (tab.id) chrome.tabs.update(tab.id, { active: true });
+                        }}
+                        className="text-blue-600 hover:underline"
+                        title={extractUrlFromSuspendedTab(tab.url ?? '')}
+                      >
+                        To Tab
+                      </a>
+                    </td>
+                    <td className="p-2">
+                      {new Date(tab.lastAccessed ?? 0).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </React.Fragment>
+            );
+          })}
+        </tbody>
+      </table>
     </>
   );
 };
